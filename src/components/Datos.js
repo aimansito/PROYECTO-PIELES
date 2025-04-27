@@ -1,0 +1,1 @@
+export const PHPLOGIN = "http://localhost/proyectos/server/login.php"; 
