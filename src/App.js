@@ -1,15 +1,15 @@
 import React, { Component } from "react";
-import Cabecera from "./componentes/Cabecera";
-import MainProductos from "./componentes/MainProductos";
-import Login from "./componentes/Login";
+import Cabecera from "./components/Cabecera";
+import Productos from "./components/Productos";
+
 import {
   BrowserRouter as Router,
   Route,
   Routes,
-  Navigate,
 } from "react-router-dom";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css"; // Añadido para los iconos
 
 class App extends Component {
   constructor(props) {
@@ -35,14 +35,12 @@ class App extends Component {
       if (productoEnCarrito) {
         productoEnCarrito.cantidad += cantidad;
 
-        // Si la cantidad es 0 o menor, elimina el producto del carrito
         if (productoEnCarrito.cantidad <= 0) {
           nuevoCarrito = nuevoCarrito.filter((e) => e.id !== productoId);
         }
       } else {
         if (cantidad > 0) {
-          // Verifica que el precio sea válido antes de agregar el producto
-          precio = precio ? precio : 0;
+          precio = precio ? parseFloat(precio) : 0; // Asegurarse que precio sea número
           nuevoCarrito.push({
             id: productoId,
             nombre: nombre,
@@ -53,7 +51,6 @@ class App extends Component {
       }
 
       console.log("Carrito actualizado:", nuevoCarrito);
-
       return { carrito: nuevoCarrito };
     });
   };
@@ -66,31 +63,24 @@ class App extends Component {
   render() {
     return (
       <Router>
+        <Cabecera
+          setCategoriaSeleccionada={this.setCategoriaSeleccionada}
+          carrito={this.state.carrito}
+          numProductosCarrito={this.state.carrito.reduce((total, item) => total + item.cantidad, 0)}
+          modificarCarrito={this.modificarCarrito}
+          usuarioActual={this.state.usuarioActual}
+        />
         <Routes>
-          {!this.state.logged ? (
-            <Route path="*" element={<Login setLogged={this.setLogged} />} />
-          ) : (
-            <>
-              <Route
-                path="/"
-                element={
-                  <>
-                    <Cabecera
-                      setCategoriaSeleccionada={this.setCategoriaSeleccionada}
-                      carrito={this.state.carrito}
-                      modificarCarrito={this.modificarCarrito}
-                      usuarioActual={this.state.usuarioActual}
-                    />
-                    <MainProductos
-                      categoriaSeleccionada={this.state.categoriaSeleccionada}
-                      modificarCarrito={this.modificarCarrito}
-                    />
-                  </>
-                }
+          <Route
+            path="/"
+            element={
+              <Productos
+                categoriaSeleccionada={this.state.categoriaSeleccionada}
+                modificarCarrito={this.modificarCarrito}
               />
-              <Route path="*" element={<Navigate to="/" />} />
-            </>
-          )}
+            }
+          />
+          {/* Añadir más rutas según sea necesario */}
         </Routes>
       </Router>
     );
