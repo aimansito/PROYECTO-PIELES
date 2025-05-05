@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Cabecera from "./components/Cabecera";
-import Productos from "./components/Productos";
-
+import MainProductos from "./components/MainProductos";
+import Login from "./components/Login";
 import {
   BrowserRouter as Router,
   Route,
@@ -86,5 +86,4 @@ class App extends Component {
     );
   }
 }
-
 export default App;
