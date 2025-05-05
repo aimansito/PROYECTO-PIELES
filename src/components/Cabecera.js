@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 import {
   Navbar, NavbarBrand, NavbarToggler, Collapse, Nav,
   Dropdown, DropdownToggle, DropdownMenu, DropdownItem,
   Button, Badge
 } from 'reactstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-// Importar los iconos de Bootstrap
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 class Cabecera extends Component {
@@ -23,18 +23,15 @@ class Cabecera extends Component {
 
   cargarCategorias = () => {
     this.setState({ loading: true });
-    fetch('http://localhost/server/categorias.php')
+
+    axios.get('http://localhost/server/categorias.php')
       .then(res => {
-        if (!res.ok) {
-          throw new Error('Error en la respuesta del servidor');
-        }
-        return res.json();
+        this.setState({ 
+          categorias: res.data, 
+          loading: false,
+          error: null 
+        });
       })
-      .then(data => this.setState({ 
-        categorias: data, 
-        loading: false,
-        error: null 
-      }))
       .catch(error => {
         console.error('Error al cargar categorías:', error);
         this.setState({ 
@@ -61,11 +58,8 @@ class Cabecera extends Component {
 
         <Collapse isOpen={isOpen} navbar>
           <Nav className="me-auto" navbar />
-          {/* Iconos a la derecha */}
           <div className="d-flex align-items-center">
-
-
-             <Button color="link" className="text-white position-relative me-3 p-0" aria-label="Carrito" href="/carrito">
+            <Button color="link" className="text-white position-relative me-3 p-0" aria-label="Carrito" href="/carrito">
               <i className="bi bi-cart3 fs-5"></i>
               {numProductosCarrito > 0 && (
                 <Badge color="danger" pill className="position-absolute top-0 start-100 translate-middle">
@@ -78,8 +72,6 @@ class Cabecera extends Component {
               <i className="bi bi-person-fill fs-5"></i>
             </Button>
 
-      
-
             <Dropdown isOpen={dropdownOpen} toggle={this.toggleDropdown} direction="down">
               <DropdownToggle color="link" className="text-white me-3 p-0" aria-label="Categorías">
                 <i className="bi bi-list fs-4"></i>
@@ -88,15 +80,15 @@ class Cabecera extends Component {
                 <DropdownItem header>Categorías</DropdownItem>
                 <DropdownItem divider />
                 <DropdownItem tag="a" href="/productos">Todos los productos</DropdownItem>
-                
+
                 {loading && (
                   <DropdownItem disabled>Cargando categorías...</DropdownItem>
                 )}
-                
+
                 {error && (
                   <DropdownItem disabled className="text-danger">{error}</DropdownItem>
                 )}
-                
+
                 {!loading && !error && categorias.map((cat) => (
                   <DropdownItem key={cat.id_categoria} tag="a" href={`/categoria/${cat.id_categoria}`}>
                     {cat.nomCategoria}

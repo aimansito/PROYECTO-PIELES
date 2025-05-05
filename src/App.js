@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Cabecera from "./components/Cabecera";
-import MainProductos from "./components/MainProductos";
-import Login from "./components/Login";
+import Productos from "./components/Productos";
+
 import {
   BrowserRouter as Router,
   Route,
@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css"; // Añadido para los iconos
+import "bootstrap-icons/font/bootstrap-icons.css"; 
 
 class App extends Component {
   constructor(props) {
@@ -40,7 +40,7 @@ class App extends Component {
         }
       } else {
         if (cantidad > 0) {
-          precio = precio ? parseFloat(precio) : 0; // Asegurarse que precio sea número
+          precio = precio ? parseFloat(precio) : 0; 
           nuevoCarrito.push({
             id: productoId,
             nombre: nombre,
@@ -65,10 +65,6 @@ class App extends Component {
       <Router>
         <Cabecera
           setCategoriaSeleccionada={this.setCategoriaSeleccionada}
-          carrito={this.state.carrito}
-          numProductosCarrito={this.state.carrito.reduce((total, item) => total + item.cantidad, 0)}
-          modificarCarrito={this.modificarCarrito}
-          usuarioActual={this.state.usuarioActual}
         />
         <Routes>
           <Route
@@ -80,10 +76,10 @@ class App extends Component {
               />
             }
           />
-          {/* Añadir más rutas según sea necesario */}
         </Routes>
       </Router>
     );
   }
 }
+
 export default App;
