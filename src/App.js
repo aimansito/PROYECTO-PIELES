@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import Cabecera from "./components/Cabecera";
 import Productos from "./components/Productos";
+import ListaProductos from "./components/ListaProductos";
+import axios from "axios";
 
 import {
   BrowserRouter as Router,
@@ -15,12 +17,48 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      productos: [],
       categoriaSeleccionada: null,
       carrito: [],
       logged: false,
       usuarioActual: null,
     };
   }
+
+
+  componentDidMount() {
+    this.cargarProductos();
+  }
+
+  cargarProductos = () => {
+    const API_URL = "http://localhost/server/productos.php";
+
+    axios
+      .get(API_URL)
+      .then((response) => {
+        console.log("Respuesta de la API:", response.data);
+        if (Array.isArray(response.data.productos)) {
+          // Registra las URLs de imágenes para depuración
+          console.log("URLs de imágenes recibidas:", 
+            response.data.productos.map(p => p.imagen_url));
+          
+          this.setState({
+            productos: response.data.productos,
+          });
+        }
+      }    
+      )
+  };
+
+  handleImageError = (id, url) => {
+    console.error(`Error cargando imagen para producto ID ${id}: ${url}`);
+    this.setState(prevState => ({
+      imageErrors: {
+        ...prevState.imageErrors,
+        [id]: url
+      }
+    }));
+  };
 
   setCategoriaSeleccionada = (categoria) => {
     this.setState({ categoriaSeleccionada: categoria });
@@ -61,6 +99,8 @@ class App extends Component {
   };
 
   render() {
+    let productShow = this.state.productos;
+
     return (
       <Router>
         <Cabecera
@@ -70,9 +110,8 @@ class App extends Component {
           <Route
             path="/"
             element={
-              <Productos
-                categoriaSeleccionada={this.state.categoriaSeleccionada}
-                modificarCarrito={this.modificarCarrito}
+              <ListaProductos
+                productos={productShow}
               />
             }
           />

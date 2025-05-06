@@ -18,6 +18,7 @@ class Productos extends Component {
       cargando: true,
       error: null,
       imageErrors: {} // Rastrea qué imágenes fallaron al cargar
+
     };
   }
 
