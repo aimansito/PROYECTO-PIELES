@@ -1,17 +1,11 @@
 import React, { Component } from 'react';
 import axios from 'axios';
-import {
-  Navbar, NavbarBrand, NavbarToggler, Collapse, Nav,
-  Dropdown, DropdownToggle, DropdownMenu, DropdownItem,
-  Button, Badge
-} from 'reactstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import { Navbar, NavbarBrand, NavbarToggler, Collapse, Nav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Badge } from 'reactstrap';
 
 class Cabecera extends Component {
   state = {
-    isOpen: false,
-    dropdownOpen: false,
+    isNavOpen: false,       // Para el toggle del navbar
+    isDropdownOpen: false,  // Para el toggle del dropdown
     categorias: [],
     loading: true,
     error: null
@@ -22,81 +16,52 @@ class Cabecera extends Component {
   }
 
   cargarCategorias = () => {
-    this.setState({ loading: true });
-
     axios.get('http://localhost/server/categorias.php')
-      .then(res => {
-        this.setState({ 
-          categorias: res.data, 
-          loading: false,
-          error: null 
-        });
-      })
-      .catch(error => {
-        console.error('Error al cargar categorías:', error);
-        this.setState({ 
-          error: 'No se pudieron cargar las categorías', 
-          loading: false 
-        });
-      });
+      .then(res => this.setState({ categorias: res.data, loading: false, error: null }))
+      .catch(error => this.setState({ error: 'No se pudieron cargar las categorías', loading: false }));
   };
 
-  toggleMenu = () => this.setState({ isOpen: !this.state.isOpen });
-  toggleDropdown = () => this.setState({ dropdownOpen: !this.state.dropdownOpen });
+  // Separamos los toggles para navbar y dropdown
+  toggleNavbar = () => {
+    this.setState({ isNavOpen: !this.state.isNavOpen });
+  };
+
+  toggleDropdown = () => {
+    this.setState({ isDropdownOpen: !this.state.isDropdownOpen });
+  };
 
   render() {
-    const { categorias, dropdownOpen, isOpen, loading, error } = this.state;
-    const { numProductosCarrito = 0 } = this.props;
+    const { categorias, isNavOpen, isDropdownOpen, loading, error } = this.state;
+    const { numProductosCarrito } = this.props;
 
     return (
       <Navbar color="dark" dark expand="md" className="px-3 shadow-sm mb-3">
-        <NavbarBrand href="/" className="fw-bold">
-          Pieles Store
-        </NavbarBrand>
-
-        <NavbarToggler onClick={this.toggleMenu} />
-
-        <Collapse isOpen={isOpen} navbar>
-          <Nav className="me-auto" navbar />
-          <div className="d-flex align-items-center">
-            <Button color="link" className="text-white position-relative me-3 p-0" aria-label="Carrito" href="/carrito">
-              <i className="bi bi-cart3 fs-5"></i>
-              {numProductosCarrito > 0 && (
-                <Badge color="danger" pill className="position-absolute top-0 start-100 translate-middle">
-                  {numProductosCarrito}
-                </Badge>
-              )}
-            </Button>
-
+        <NavbarBrand href="/">Pieles Store</NavbarBrand>
+        <NavbarToggler onClick={this.toggleNavbar} />
+        <Collapse isOpen={isNavOpen} navbar className="justify-content-end">
+          <Nav className="d-flex align-items-center">
             <Button color="link" className="text-white me-3 p-0" aria-label="Usuario" href="/perfil">
               <i className="bi bi-person-fill fs-5"></i>
             </Button>
-
-            <Dropdown isOpen={dropdownOpen} toggle={this.toggleDropdown} direction="down">
-              <DropdownToggle color="link" className="text-white me-3 p-0" aria-label="Categorías">
+            <Button color="link" className="text-white me-3 p-0" aria-label="Carrito" href="/carrito">
+              <i className="bi bi-cart3 fs-5"></i>
+              {numProductosCarrito > 0 && <Badge color="danger" pill>{numProductosCarrito}</Badge>}
+            </Button>
+            <Dropdown isOpen={isDropdownOpen} toggle={this.toggleDropdown} direction="down">
+              <DropdownToggle color="link" className="text-white p-0">
                 <i className="bi bi-list fs-4"></i>
               </DropdownToggle>
-              <DropdownMenu className="shadow border-0">
-                <DropdownItem header>Categorías</DropdownItem>
-                <DropdownItem divider />
-                <DropdownItem tag="a" href="/productos">Todos los productos</DropdownItem>
-
-                {loading && (
-                  <DropdownItem disabled>Cargando categorías...</DropdownItem>
-                )}
-
-                {error && (
-                  <DropdownItem disabled className="text-danger">{error}</DropdownItem>
-                )}
-
-                {!loading && !error && categorias.map((cat) => (
-                  <DropdownItem key={cat.id_categoria} tag="a" href={`/categoria/${cat.id_categoria}`}>
+              <DropdownMenu end className="shadow border-0">
+                {loading && <DropdownItem disabled>Cargando categorías...</DropdownItem>}
+                {error && <DropdownItem disabled>{error}</DropdownItem>}
+                {categorias.map(cat => (
+                  <DropdownItem key={cat.id_categoria} onClick={() => this.props.setCategoriaSeleccionada(cat.id_categoria)}>
                     {cat.nomCategoria}
                   </DropdownItem>
                 ))}
               </DropdownMenu>
             </Dropdown>
-          </div>
+          </Nav>
         </Collapse>
       </Navbar>
     );

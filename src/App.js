@@ -3,14 +3,10 @@ import Cabecera from "./components/Cabecera";
 import ListaProductos from "./components/ListaProductos";
 import axios from "axios";
 
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css"; 
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 class App extends Component {
   constructor(props) {
@@ -24,94 +20,51 @@ class App extends Component {
     };
   }
 
-
   componentDidMount() {
     this.cargarProductos();
   }
-
-  cargarProductos = () => {
-    const API_URL = "http://localhost/server/productos.php";
-
-    axios
-      .get(API_URL)
-      .then((response) => {
-        console.log("Respuesta de la API:", response.data);
-        if (Array.isArray(response.data.productos)) {
-          // Registra las URLs de imágenes para depuración
-          console.log("URLs de imágenes recibidas:", 
-            response.data.productos.map(p => p.imagen_url));
-          
-          this.setState({
-            productos: response.data.productos,
-          });
-        }
-      }    
-      )
-  };
-
-  handleImageError = (id, url) => {
-    console.error(`Error cargando imagen para producto ID ${id}: ${url}`);
-    this.setState(prevState => ({
-      imageErrors: {
-        ...prevState.imageErrors,
-        [id]: url
+  cargarProductos = async () => {
+    try {
+      const API_URL = "http://localhost/server/productos.php";
+      const response = await axios.get(API_URL);
+      
+      if (Array.isArray(response.data?.productos)) {
+        const productosMezclados = this.mezclarArray(response.data.productos);
+        this.setState({ 
+          productos: productosMezclados,
+          loading: false 
+        });
       }
-    }));
+    } catch (error) {
+      // Manejo de errores
+    }
+  };
+  
+  // Función para mezclar array (añadir en App.js)
+  mezclarArray = (array) => {
+    const nuevoArray = [...array];
+    for (let i = nuevoArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [nuevoArray[i], nuevoArray[j]] = [nuevoArray[j], nuevoArray[i]];
+    }
+    return nuevoArray;
   };
 
   setCategoriaSeleccionada = (categoria) => {
     this.setState({ categoriaSeleccionada: categoria });
   };
 
-  modificarCarrito = (productoId, nombre, precio, cantidad) => {
-    this.setState((prevState) => {
-      let nuevoCarrito = prevState.carrito.map((e) => ({ ...e }));
-
-      let productoEnCarrito = nuevoCarrito.find((e) => e.id === productoId);
-
-      if (productoEnCarrito) {
-        productoEnCarrito.cantidad += cantidad;
-
-        if (productoEnCarrito.cantidad <= 0) {
-          nuevoCarrito = nuevoCarrito.filter((e) => e.id !== productoId);
-        }
-      } else {
-        if (cantidad > 0) {
-          precio = precio ? parseFloat(precio) : 0; 
-          nuevoCarrito.push({
-            id: productoId,
-            nombre: nombre,
-            precio: precio,
-            cantidad: cantidad,
-          });
-        }
-      }
-
-      console.log("Carrito actualizado:", nuevoCarrito);
-      return { carrito: nuevoCarrito };
-    });
-  };
-
-  setLogged = (estado, usuario = null) => {
-    console.log("Usuario recibido en setLogged:", usuario);
-    this.setState({ logged: estado, usuarioActual: usuario });
-  };
-
   render() {
-    let productShow = this.state.productos;
+    const { productos, categoriaSeleccionada } = this.state;
 
     return (
       <Router>
-        <Cabecera
-          setCategoriaSeleccionada={this.setCategoriaSeleccionada}
-        />
+        <Cabecera setCategoriaSeleccionada={this.setCategoriaSeleccionada} />
         <Routes>
           <Route
             path="/"
             element={
-              <ListaProductos
-                productos={productShow}
-              />
+              <ListaProductos productos={productos} categoriaSeleccionada={categoriaSeleccionada} />
             }
           />
         </Routes>
