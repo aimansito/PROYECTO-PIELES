@@ -1,82 +1,52 @@
-import React, { Component } from 'react';
-import { Button, FormGroup, Input, Label } from 'reactstrap';
-import { Navigate } from "react-router-dom";
-import { PHPLOGIN } from './Datos';
-import 'bootstrap/dist/css/bootstrap.min.css';
+// src/components/Login.js
+import React, { Component } from "react";
+import axios from "axios";
+import { Modal, ModalHeader, ModalBody, FormGroup, Label, Input, Button } from "reactstrap";
 
 class Login extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            usuario: "",
-            clave: "",
-            redirigir: false
-        };
+  state = {
+    modalOpen: false,
+    usuario: "",
+    clave: ""
+  };
+
+  toggleModal = () => {
+    this.setState({ modalOpen: !this.state.modalOpen });
+  };
+
+  handleLogin = async () => {
+    const { usuario, clave } = this.state;
+    try {
+      const response = await axios.post("http://localhost/server/login.php", { nombre: usuario, clave: clave });
+      if (response.data.success) {
+        this.props.setLogged(true, response.data.usuario.nombre);
+        this.toggleModal();
+      } else {
+        alert(response.data.mensaje);
+      }
+    } catch (error) {
+      alert("Error al conectar con el servidor.");
     }
+  };
 
-    handleChange = (event) => {
-        const { name, value } = event.target;
-        this.setState({ [name]: value });
-    };
-
-    handleLogin = async () => {
-        const { usuario, clave } = this.state;
-        const datos = { usuario, clave };
-    
-        try {
-            const response = await fetch(PHPLOGIN, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(datos),
-            });
-    
-            const resultado = await response.json();
-            if (resultado.success) {
-                alert("Inicio de sesión exitoso.");
-
-                this.props.setLogged(true, resultado.usuario); 
-                this.setState({ redirigir: true });
-                console.log("Usuario logueado:", resultado.usuario);
-            } else {
-                alert(resultado.mensaje);
-            }
-        } catch (error) {
-            alert("Error al conectar con el servidor.");
-        }
-    };
-
-    render() {
-        if (this.state.redirigir) {
-            return <Navigate to="/" />;
-        }
-
-        return (
-            <div className="container mt-5">
-                <h2>Iniciar Sesión</h2>
-                <FormGroup>
-                    <Label>Nombre:</Label>
-                    <Input
-                        id="usuario"
-                        name="usuario"
-                        type="text"
-                        value={this.state.usuario}
-                        onChange={this.handleChange}
-                    />
-                </FormGroup>
-                <FormGroup>
-                    <Label>Contraseña:</Label>
-                    <Input
-                        id="clave"
-                        name="clave"
-                        type="password"
-                        value={this.state.clave}
-                        onChange={this.handleChange}
-                    />
-                </FormGroup>
-                <Button color="primary" onClick={this.handleLogin}>Aceptar</Button>
-            </div>
-        );
-    }
+  render() {
+    return (
+      <Modal isOpen={this.state.modalOpen} toggle={this.toggleModal}>
+        <ModalHeader toggle={this.toggleModal}>Iniciar Sesión</ModalHeader>
+        <ModalBody>
+          <FormGroup>
+            <Label>Usuario</Label>
+            <Input type="text" onChange={(e) => this.setState({ usuario: e.target.value })} />
+          </FormGroup>
+          <FormGroup>
+            <Label>Contraseña</Label>
+            <Input type="password" onChange={(e) => this.setState({ clave: e.target.value })} />
+          </FormGroup>
+          <Button color="primary" onClick={this.handleLogin}>Ingresar</Button>
+        </ModalBody>
+      </Modal>
+    );
+  }
 }
 
 export default Login;
