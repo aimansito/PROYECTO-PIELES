@@ -2,6 +2,7 @@
 import React, { Component } from "react";
 import axios from "axios";
 import { Navbar, NavbarBrand, NavbarToggler, Collapse, Nav, Dropdown, DropdownToggle, DropdownMenu, DropdownItem, Button, Badge } from "reactstrap";
+import { Link } from "react-router-dom";
 
 class Cabecera extends Component {
   state = {
@@ -29,6 +30,7 @@ class Cabecera extends Component {
 
   render() {
     const { categorias, isNavOpen, isDropdownOpen } = this.state;
+    const { numProductosCarrito, logged, usuarioActual } = this.props;
 
     return (
       <Navbar color="dark" dark expand="md" className="px-3 shadow-sm mb-3">
@@ -36,8 +38,26 @@ class Cabecera extends Component {
         <NavbarToggler onClick={this.toggleNavbar} />
         <Collapse isOpen={isNavOpen} navbar className="justify-content-end">
           <Nav className="d-flex align-items-center">
+
+            {/* Icono de Usuario */}
+            <Link to={logged ? "#" : "/login"} className="text-white me-3 p-0">
+              <i className="bi bi-person-circle fs-4"></i>
+              {logged && <span className="ms-2">Hola, {usuarioActual}</span>}
+            </Link>
+
+             {/* Icono del Carrito */}
+             <Button color="link" className="text-white me-3 p-0" href="/carrito">
+              <i className="bi bi-cart3 fs-5"></i>
+              {numProductosCarrito > 0 && (
+                <Badge color="danger" pill className="ms-1">
+                  {numProductosCarrito}
+                </Badge>
+              )}
+            </Button>
+
+           {/* Menú Hamburguesa */}
             <Dropdown isOpen={isDropdownOpen} toggle={this.toggleDropdown} direction="down">
-              <DropdownToggle color="link" className="text-white">
+              <DropdownToggle color="link" className="text-white me-3">
                 <i className="bi bi-list fs-4"></i>
               </DropdownToggle>
               <DropdownMenu end>
