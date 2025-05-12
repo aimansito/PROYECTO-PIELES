@@ -1,28 +1,38 @@
 // src/components/Login.js
 import React, { Component } from "react";
+import { Button, FormGroup, Input, Label, Modal, ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import axios from "axios";
-import { Modal, ModalHeader, ModalBody, FormGroup, Label, Input, Button } from "reactstrap";
 
 class Login extends Component {
   state = {
-    modalOpen: false,
-    usuario: "",
+    nombre: "",
     clave: ""
   };
 
-  toggleModal = () => {
-    this.setState({ modalOpen: !this.state.modalOpen });
+  handleChange = (event) => {
+    const { name, value } = event.target;
+    this.setState({ [name]: value });
   };
 
   handleLogin = async () => {
-    const { usuario, clave } = this.state;
+    const { nombre, clave } = this.state;
+
+    if (!nombre || !clave) {
+      alert("Por favor, complete todos los campos.");
+      return;
+    }
+
     try {
-      const response = await axios.post("http://localhost/server/login.php", { nombre: usuario, clave: clave });
-      if (response.data.success) {
-        this.props.setLogged(true, response.data.usuario.nombre);
-        this.toggleModal();
+      const response = await axios.post("http://localhost/server/login.php", {
+        nombre,
+        clave
+      });
+
+      const data = response.data;
+      if (data.success) {
+        this.props.onLoginSuccess(data.usuario.nombre);
       } else {
-        alert(response.data.mensaje);
+        alert(data.mensaje);
       }
     } catch (error) {
       alert("Error al conectar con el servidor.");
@@ -30,20 +40,37 @@ class Login extends Component {
   };
 
   render() {
+    const { isOpen, toggle } = this.props;
+
     return (
-      <Modal isOpen={this.state.modalOpen} toggle={this.toggleModal}>
-        <ModalHeader toggle={this.toggleModal}>Iniciar Sesión</ModalHeader>
+      <Modal isOpen={isOpen} toggle={toggle}>
+        <ModalHeader toggle={toggle}>Iniciar Sesión</ModalHeader>
         <ModalBody>
           <FormGroup>
-            <Label>Usuario</Label>
-            <Input type="text" onChange={(e) => this.setState({ usuario: e.target.value })} />
+            <Label for="nombre">Usuario</Label>
+            <Input 
+              type="text" 
+              name="nombre" 
+              value={this.state.nombre} 
+              onChange={this.handleChange} 
+              placeholder="Ingresa tu nombre de usuario" 
+            />
           </FormGroup>
           <FormGroup>
-            <Label>Contraseña</Label>
-            <Input type="password" onChange={(e) => this.setState({ clave: e.target.value })} />
+            <Label for="clave">Contraseña</Label>
+            <Input 
+              type="password" 
+              name="clave" 
+              value={this.state.clave} 
+              onChange={this.handleChange} 
+              placeholder="Ingresa tu contraseña" 
+            />
           </FormGroup>
-          <Button color="primary" onClick={this.handleLogin}>Ingresar</Button>
         </ModalBody>
+        <ModalFooter>
+          <Button color="primary" onClick={this.handleLogin}>Aceptar</Button>
+          <Button color="secondary" onClick={toggle}>Cancelar</Button>
+        </ModalFooter>
       </Modal>
     );
   }
