@@ -173,13 +173,10 @@ class Productos extends Component {
     );
   }
 
-  // Método auxiliar para asegurar que las URLs estén correctamente formateadas
   getImageUrl(url) {
     if (!url) return "https://via.placeholder.com/300x200?text=Sin+imagen";
     
-    // Si la URL es relativa (no comienza con http:// o https://)
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      // Asumimos que es relativa a tu servidor
       return `http://localhost/server/${url}`;
     }
     
