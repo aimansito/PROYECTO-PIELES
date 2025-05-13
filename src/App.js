@@ -1,7 +1,7 @@
-// src/App.js
 import React, { Component } from "react";
 import Cabecera from "./components/Cabecera";
 import ListaProductos from "./components/ListaProductos";
+import Carrito from "./components/CarritoModal";
 import axios from "axios";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./App.css";
@@ -14,8 +14,10 @@ class App extends Component {
     productosFiltrados: [],
     categoriaSeleccionada: null,
     carrito: [],
+    modalCarrito: false,
     logged: false,
     usuarioActual: null,
+    rol: null
   };
 
   componentDidMount() {
@@ -26,67 +28,78 @@ class App extends Component {
     try {
       const API_URL = "http://localhost/server/productos.php";
       const response = await axios.get(API_URL);
-
       if (Array.isArray(response.data?.productos)) {
-        const productosMezclados = this.mezclarArray(response.data.productos);
-        this.setState({
-          productos: productosMezclados,
-          productosFiltrados: productosMezclados, // Inicialmente todos los productos
-        });
-      } else {
-        console.error("La respuesta no contiene un array de productos.");
+        this.setState({ productos: response.data.productos, productosFiltrados: response.data.productos });
       }
     } catch (error) {
       console.error("Error al cargar productos:", error);
     }
   };
 
-  mezclarArray = (array) => {
-    return array.sort(() => Math.random() - 0.5);
+  setCategoriaSeleccionada = (idCategoria) => {
+    const productosFiltrados = this.state.productos.filter(
+      (producto) => producto.categoria_id === parseInt(idCategoria)
+    );
+    this.setState({ productosFiltrados, categoriaSeleccionada: idCategoria });
   };
 
-  setCategoriaSeleccionada = (categoriaId) => {
-    this.setState({ categoriaSeleccionada: categoriaId }, this.filtrarProductos);
+  toggleCarrito = () => {
+    this.setState({ modalCarrito: !this.state.modalCarrito });
   };
 
-  filtrarProductos = () => {
-    const { productos, categoriaSeleccionada } = this.state;
+  agregarAlCarrito = (producto) => {
+    if (!this.state.logged) return alert("Debes iniciar sesión para añadir productos.");
 
-    if (categoriaSeleccionada) {
-      const productosFiltrados = productos.filter(
-        (producto) => producto.categoria_id === parseInt(categoriaSeleccionada)
-      );
-      this.setState({ productosFiltrados });
+    const carritoActualizado = [...this.state.carrito];
+    const productoExistente = carritoActualizado.find(p => p.id === producto.id);
+
+    if (productoExistente) {
+      productoExistente.cantidad += 1;
     } else {
-      this.setState({ productosFiltrados: productos });
+      carritoActualizado.push({ ...producto, cantidad: 1 });
     }
+
+    this.setState({ carrito: carritoActualizado });
   };
 
-  setLogged = (logged, usuarioActual = null) => {
-    this.setState({ logged, usuarioActual });
+  setLogged = (logged, usuarioActual = null, rol = null) => {
+    this.setState({ logged, usuarioActual, rol });
   };
 
   render() {
-    const { productosFiltrados, logged, usuarioActual } = this.state;
+    const { productosFiltrados, logged, usuarioActual, rol, modalCarrito, carrito } = this.state;
 
     return (
       <Router>
         <Cabecera 
-          onCategoriaSeleccionada={this.setCategoriaSeleccionada} 
+          onLogin={this.setLogged} 
           logged={logged} 
           usuarioActual={usuarioActual} 
-          setLogged={this.setLogged} 
+          rol={rol}
+          toggleCarrito={this.toggleCarrito} 
+          numProductosCarrito={carrito.length} 
+          setCategoriaSeleccionada={this.setCategoriaSeleccionada}
         />
+
         <Routes>
           <Route
             path="/"
             element={
               <ListaProductos 
                 productos={productosFiltrados} 
+                agregarAlCarrito={this.agregarAlCarrito} 
+                logged={logged}
               />
             }
           />
         </Routes>
+
+        <Carrito 
+          mostrar={modalCarrito} 
+          toggle={this.toggleCarrito} 
+          carrito={carrito} 
+          usuarioActual={usuarioActual} 
+        />
       </Router>
     );
   }
