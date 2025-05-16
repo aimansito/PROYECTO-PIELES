@@ -13,49 +13,46 @@ const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarr
   const toggleLoginModal = () => setShowLoginModal(!showLoginModal);
 
   const guardarPedidoEnBD = async () => {
-    try {
-      if (!usuarioActual || !usuarioActual.id) {
-        setMensaje({
-          texto: "No se pudo identificar tu cuenta. Por favor, inicia sesión nuevamente.",
-          tipo: "danger",
-        });
-        return false;
-      }
-
-      const API_URL = "http://localhost/server/crear_pedido.php";
-
-      // Fecha actual en formato ISO 'YYYY-MM-DD HH:mm:ss'
-      const fechaActual = new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-      const dataPedido = {
-        fecha: fechaActual,
-        importe: total,
-        id_cliente: usuarioActual.id,
-      };
-
-      const response = await axios.post(API_URL, dataPedido, { withCredentials: true });
-
-      if (response.data?.success) {
-        setMensaje({
-          texto: "¡Compra realizada con éxito!",
-          tipo: "success",
-        });
-        return true;
-      } else {
-        setMensaje({
-          texto: response.data?.mensaje || "Error al procesar la compra",
-          tipo: "danger",
-        });
-        return false;
-      }
-    } catch (error) {
+  try {
+    if (!usuarioActual || !usuarioActual.id) {
       setMensaje({
-        texto: "Error de conexión con el servidor",
+        texto: "No se pudo identificar tu cuenta. Por favor, inicia sesión nuevamente.",
         tipo: "danger",
       });
       return false;
     }
-  };
+
+    const API_URL = "http://localhost/server/crear_pedido.php";
+
+    const dataPedido = {
+      id_cliente: usuarioActual.id,
+      importe: total,
+    };
+
+    const response = await axios.post(API_URL, dataPedido);
+
+    if (response.data?.success) {
+      setMensaje({
+        texto: "¡Compra realizada con éxito!",
+        tipo: "success",
+      });
+      return true;
+    } else {
+      setMensaje({
+        texto: response.data?.mensaje || "Error al procesar la compra",
+        tipo: "danger",
+      });
+      return false;
+    }
+  } catch (error) {
+    setMensaje({
+      texto: "Error de conexión con el servidor",
+      tipo: "danger",
+    });
+    return false;
+  }
+};
+
 
   const confirmarCompra = async () => {
     if (carrito.length === 0) {
