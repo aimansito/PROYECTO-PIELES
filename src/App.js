@@ -22,10 +22,22 @@ class App extends Component {
 
   componentDidMount() {
     this.cargarProductos();
-    // Recuperar carrito del localStorage si existe
+
+    // Cargar carrito almacenado en localStorage
     const carritoGuardado = localStorage.getItem('carrito');
     if (carritoGuardado) {
       this.setState({ carrito: JSON.parse(carritoGuardado) });
+    }
+
+    // Cargar usuario almacenado en localStorage
+    const usuarioGuardado = localStorage.getItem('usuario');
+    if (usuarioGuardado) {
+      const usuario = JSON.parse(usuarioGuardado);
+      this.setState({ 
+        logged: true,
+        usuarioActual: usuario,
+        rol: usuario.rol
+      });
     }
   }
 
@@ -34,7 +46,10 @@ class App extends Component {
       const API_URL = "http://localhost/server/productos.php";
       const response = await axios.get(API_URL);
       if (Array.isArray(response.data?.productos)) {
-        this.setState({ productos: response.data.productos, productosFiltrados: response.data.productos });
+        this.setState({ 
+          productos: response.data.productos, 
+          productosFiltrados: response.data.productos 
+        });
       }
     } catch (error) {
       console.error("Error al cargar productos:", error);
@@ -42,19 +57,21 @@ class App extends Component {
   };
 
   setCategoriaSeleccionada = (idCategoria) => {
-    if (idCategoria === null || idCategoria === "0") {
-      // Si no hay categoría seleccionada o es "0", mostrar todos los productos
-      this.setState({ productosFiltrados: this.state.productos, categoriaSeleccionada: idCategoria });
+    if (!idCategoria || idCategoria === "0") {
+      this.setState({ 
+        productosFiltrados: this.state.productos, 
+        categoriaSeleccionada: null 
+      });
     } else {
       const productosFiltrados = this.state.productos.filter(
-        (producto) => producto.categoria_id === parseInt(idCategoria)
+        producto => producto.categoria_id === parseInt(idCategoria)
       );
       this.setState({ productosFiltrados, categoriaSeleccionada: idCategoria });
     }
   };
 
   toggleCarrito = () => {
-    this.setState({ modalCarrito: !this.state.modalCarrito });
+    this.setState((prevState) => ({ modalCarrito: !prevState.modalCarrito }));
   };
 
   agregarAlCarrito = (producto) => {
@@ -63,40 +80,32 @@ class App extends Component {
       return;
     }
 
-    // Crear una copia completa del producto para asegurar que no hay referencias
-    const productoCompleto = {
-      id: producto.id_producto,  // Adaptado a la estructura real de los datos
-      nombre: producto.nombre,
-      precio: parseFloat(producto.precio),
-      descripcion: producto.descripcion,
-      imagen_url: producto.imagen_url,
-      id_categoria: producto.id_categoria
-    };
-    
-    // Crear una copia real del carrito actual (clonar el array completamente)
-    const carritoActualizado = JSON.parse(JSON.stringify(this.state.carrito));
-    
-    // Buscar si el producto que se está añadiendo ya existe en el carrito
-    const index = carritoActualizado.findIndex(item => item.id === productoCompleto.id);
-    
-    // Si el producto ya existe, incrementar su cantidad
+    // Crear nueva copia del carrito para evitar mutaciones directas
+    const carritoActualizado = [...this.state.carrito];
+
+    // Buscar si el producto ya está en el carrito
+    const index = carritoActualizado.findIndex(item => item.id === producto.id_producto);
+
     if (index !== -1) {
       carritoActualizado[index].cantidad += 1;
     } else {
-      // Si el producto no existe en el carrito, añadirlo con cantidad 1
-      carritoActualizado.push({ ...productoCompleto, cantidad: 1 });
+      // Añadir nuevo producto con cantidad 1
+      carritoActualizado.push({
+        id: producto.id_producto,
+        nombre: producto.nombre,
+        precio: parseFloat(producto.precio),
+        descripcion: producto.descripcion,
+        imagen_url: producto.imagen_url,
+        id_categoria: producto.id_categoria,
+        cantidad: 1
+      });
     }
-    
-    console.log("Producto añadido:", productoCompleto);
-    console.log("Carrito actualizado:", carritoActualizado);
-    
-    // Actualizar el estado con el carrito modificado y guardarlo en localStorage
+
     this.setState({ carrito: carritoActualizado }, () => {
       localStorage.setItem('carrito', JSON.stringify(carritoActualizado));
     });
-    
-    // Mostrar confirmación al usuario
-    alert(`Añadido al carrito: ${productoCompleto.nombre}`);
+
+    alert(`Añadido al carrito: ${producto.nombre}`);
   };
 
   eliminarDelCarrito = (productoId) => {
@@ -108,10 +117,10 @@ class App extends Component {
 
   cambiarCantidad = (productoId, nuevaCantidad) => {
     if (nuevaCantidad < 1) return;
-    
+
     const carritoActualizado = [...this.state.carrito];
     const index = carritoActualizado.findIndex(item => item.id === productoId);
-    
+
     if (index !== -1) {
       carritoActualizado[index].cantidad = nuevaCantidad;
       this.setState({ carrito: carritoActualizado }, () => {
@@ -120,12 +129,24 @@ class App extends Component {
     }
   };
 
+  // Actualizar estado global cuando inicie o cierre sesión el usuario
   setLogged = (logged, usuarioActual = null, rol = null) => {
-    this.setState({ logged, usuarioActual, rol });
+    this.setState({ logged, usuarioActual, rol }, () => {
+      if (logged && usuarioActual) {
+        // Guardar todos los datos de usuario en localStorage
+        localStorage.setItem('usuario', JSON.stringify(usuarioActual));
+      } else {
+        localStorage.removeItem('usuario');
+        this.setState({ carrito: [] }, () => {
+          localStorage.removeItem('carrito');
+        });
+      }
+    });
   };
 
   render() {
     const { productosFiltrados, logged, usuarioActual, rol, modalCarrito, carrito } = this.state;
+
     return (
       <Router>
         <Cabecera
@@ -134,7 +155,7 @@ class App extends Component {
           usuarioActual={usuarioActual}
           rol={rol}
           toggleCarrito={this.toggleCarrito}
-          numProductosCarrito={carrito.reduce((total, producto) => total + producto.cantidad, 0)}
+          numProductosCarrito={carrito.reduce((total, p) => total + p.cantidad, 0)}
           setCategoriaSeleccionada={this.setCategoriaSeleccionada}
         />
         <Routes>
@@ -163,3 +184,4 @@ class App extends Component {
 }
 
 export default App;
+

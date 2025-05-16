@@ -6,23 +6,22 @@ import {
   NavbarToggler,
   Collapse,
   Nav,
-  NavItem,
   Dropdown,
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
   Button,
-  Badge
+  Badge,
 } from "reactstrap";
-import { Link } from "react-router-dom";
 import Login from "./Login";
 
 class Cabecera extends Component {
   state = {
     isNavOpen: false,
     isDropdownOpen: false,
+    isDropdownCategoriasOpen: false,
     categorias: [],
-    modalLogin: false
+    modalLogin: false,
   };
 
   componentDidMount() {
@@ -30,18 +29,50 @@ class Cabecera extends Component {
   }
 
   cargarCategorias = () => {
-    axios.get("http://localhost/server/categorias.php")
-      .then(res => this.setState({ categorias: res.data }))
+    axios
+      .get("http://localhost/server/categorias.php")
+      .then((res) => this.setState({ categorias: res.data }))
       .catch(() => console.error("No se pudieron cargar las categorías"));
   };
 
-  toggleNavbar = () => this.setState(prevState => ({ isNavOpen: !prevState.isNavOpen }));
-  toggleDropdown = () => this.setState(prevState => ({ isDropdownOpen: !prevState.isDropdownOpen }));
-  toggleModalLogin = () => this.setState(prevState => ({ modalLogin: !prevState.modalLogin }));
+  toggleNavbar = () =>
+    this.setState((prevState) => ({ isNavOpen: !prevState.isNavOpen }));
+  toggleDropdown = () =>
+    this.setState((prevState) => ({
+      isDropdownOpen: !prevState.isDropdownOpen,
+    }));
+  toggleDropdownCategorias = () =>
+    this.setState((prevState) => ({
+      isDropdownCategoriasOpen: !prevState.isDropdownCategoriasOpen,
+    }));
+  toggleModalLogin = () =>
+    this.setState((prevState) => ({ modalLogin: !prevState.modalLogin }));
+
+  // Método para manejar login exitoso
+  handleLoginSuccess = (isLogged, usuarioData, rol) => {
+    this.props.onLogin(isLogged, usuarioData, rol);
+    console.log("Usuario logueado en Cabecera:", {
+      isLogged,
+      usuarioData,
+      rol,
+    });
+  };
+
+  // Método para cerrar sesión
+  handleLogout = () => {
+    this.props.onLogin(false, null, null);
+  };
 
   render() {
-    const { categorias, isNavOpen, modalLogin } = this.state;
-    const { logged, usuarioActual, rol, onLogin, onLogout, toggleCarrito, numProductosCarrito } = this.props;
+    const {
+      categorias,
+      isNavOpen,
+      modalLogin,
+      isDropdownOpen,
+      isDropdownCategoriasOpen,
+    } = this.state;
+    const { logged, usuarioActual, toggleCarrito, numProductosCarrito, rol } =
+      this.props;
 
     return (
       <Navbar color="dark" dark expand="md" className="px-3">
@@ -50,40 +81,46 @@ class Cabecera extends Component {
         <Collapse isOpen={isNavOpen} navbar>
           <Nav className="ms-auto d-flex align-items-center gap-3">
             {logged ? (
-              <Dropdown isOpen={this.state.isDropdownOpen} toggle={this.toggleDropdown}>
+              <Dropdown isOpen={isDropdownOpen} toggle={this.toggleDropdown}>
                 <DropdownToggle nav caret className="text-white">
-                  Hola, {usuarioActual || "Usuario"}
+                  Hola, {usuarioActual?.nombre || "Usuario"} ({rol || "Usuario"})
                 </DropdownToggle>
                 <DropdownMenu end>
-                  <DropdownItem onClick={onLogout}>Cerrar Sesión</DropdownItem>
+                  <DropdownItem onClick={this.handleLogout}>
+                    Cerrar Sesión
+                  </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             ) : (
-              <Button color="link" className="text-white p-0 d-flex align-items-center" onClick={this.toggleModalLogin}>
+              <Button
+                color="link"
+                className="text-white p-0 d-flex align-items-center"
+                onClick={this.toggleModalLogin}
+              >
                 <i className="bi bi-person-circle fs-4"></i>
               </Button>
             )}
 
-            <Dropdown isOpen={this.state.isDropdownOpen} toggle={this.toggleDropdown}>
+            <Dropdown
+              isOpen={isDropdownCategoriasOpen}
+              toggle={this.toggleDropdownCategorias}
+            >
               <DropdownToggle color="link" className="text-white p-0">
                 Categorías
               </DropdownToggle>
               <DropdownMenu end>
-                {categorias.map(cat => (
-                  <DropdownItem 
-                    key={cat.id_categoria} 
-                    onClick={() => {
-                      if (this.props.setCategoriaSeleccionada) {
-                        this.props.setCategoriaSeleccionada(cat.id_categoria);
-                      } else if (this.props.onCategoriaSeleccionada) {
-                        this.props.onCategoriaSeleccionada(cat.id_categoria);
-                      } else {
-                        console.log("Categoría seleccionada:", cat.nomCategoria, cat.id_categoria);
-                        // Alternativa: usar directamente fetch o axios para cargar productos
-                        // axios.get(`http://localhost/server/productos.php?categoria=${cat.id_categoria}`)
-                        //  .then(res => this.props.setProductos ? this.props.setProductos(res.data) : console.log(res.data));
-                      }
-                    }}
+                <DropdownItem
+                  key="0"
+                  onClick={() => this.props.setCategoriaSeleccionada("0")}
+                >
+                  Todas las categorías
+                </DropdownItem>
+                {categorias.map((cat) => (
+                  <DropdownItem
+                    key={cat.id_categoria}
+                    onClick={() =>
+                      this.props.setCategoriaSeleccionada(cat.id_categoria)
+                    }
                   >
                     {cat.nomCategoria}
                   </DropdownItem>
@@ -91,14 +128,26 @@ class Cabecera extends Component {
               </DropdownMenu>
             </Dropdown>
 
-            <Button color="link" className="text-white position-relative" onClick={toggleCarrito}>
+            <Button
+              color="link"
+              className="text-white position-relative"
+              onClick={toggleCarrito}
+            >
               <i className="bi bi-cart3 fs-4"></i>
-              {numProductosCarrito > 0 && <Badge color="danger" pill>{numProductosCarrito}</Badge>}
+              {numProductosCarrito > 0 && (
+                <Badge color="danger" pill>
+                  {numProductosCarrito}
+                </Badge>
+              )}
             </Button>
           </Nav>
         </Collapse>
 
-        <Login isOpen={modalLogin} toggle={this.toggleModalLogin} onLoginSuccess={onLogin} />
+        <Login
+          isOpen={modalLogin}
+          toggle={this.toggleModalLogin}
+          onLoginSuccess={this.handleLoginSuccess}
+        />
       </Navbar>
     );
   }
