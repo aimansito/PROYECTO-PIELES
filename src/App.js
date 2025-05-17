@@ -71,12 +71,24 @@ class App extends Component {
   };
 
   toggleCarrito = () => {
+    // Solo permitir abrir el carrito si el usuario no es administrador
+    if (this.state.rol === "admin") {
+      alert("Como administrador, no puedes realizar compras.");
+      return;
+    }
     this.setState((prevState) => ({ modalCarrito: !prevState.modalCarrito }));
   };
 
   agregarAlCarrito = (producto) => {
+    // Verificar primero si está logueado
     if (!this.state.logged) {
       alert("Debes iniciar sesión para añadir productos.");
+      return;
+    }
+
+    // Verificar el rol - solo usuarios no administradores pueden comprar
+    if (this.state.rol === "admin") {
+      alert("Como administrador, no puedes realizar compras.");
       return;
     }
 
@@ -135,6 +147,13 @@ class App extends Component {
       if (logged && usuarioActual) {
         // Guardar todos los datos de usuario en localStorage
         localStorage.setItem('usuario', JSON.stringify(usuarioActual));
+        
+        // Si es administrador, vaciar el carrito
+        if (rol === "admin") {
+          this.setState({ carrito: [] }, () => {
+            localStorage.removeItem('carrito');
+          });
+        }
       } else {
         localStorage.removeItem('usuario');
         this.setState({ carrito: [] }, () => {
@@ -166,22 +185,26 @@ class App extends Component {
                 productos={productosFiltrados}
                 agregarAlCarrito={this.agregarAlCarrito}
                 logged={logged}
+                rol={rol} // Pasar el rol para controlar botones de compra
               />
             }
           />
         </Routes>
-        <Carrito
-          mostrar={modalCarrito}
-          toggle={this.toggleCarrito}
-          carrito={carrito}
-          usuarioActual={usuarioActual}
-          eliminarDelCarrito={this.eliminarDelCarrito}
-          cambiarCantidad={this.cambiarCantidad}
-        />
+        
+        {/* Solo mostrar el carrito si el usuario no es administrador */}
+        {rol !== "admin" && (
+          <Carrito
+            mostrar={modalCarrito}
+            toggle={this.toggleCarrito}
+            carrito={carrito}
+            usuarioActual={usuarioActual}
+            eliminarDelCarrito={this.eliminarDelCarrito}
+            cambiarCantidad={this.cambiarCantidad}
+          />
+        )}
       </Router>
     );
   }
 }
 
 export default App;
-

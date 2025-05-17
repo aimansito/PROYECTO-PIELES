@@ -1,61 +1,84 @@
-import React from "react";
-import { Card, CardBody, CardTitle, CardText, CardImg, Button } from "reactstrap";
+import React, { Component } from "react";
+import { Container, Row, Col, Card, CardBody, CardTitle, CardText, Button, Spinner } from "reactstrap";
 
-function ListaProductos({ productos, categoriaSeleccionada, agregarAlCarrito, logged, rolUsuario }) {
-  const productosFiltrados = categoriaSeleccionada
-    ? productos.filter(prod => prod.id_categoria === parseInt(categoriaSeleccionada))
-    : productos;
+class ListaProductos extends Component {
+  render() {
+    const { productos, agregarAlCarrito, logged, rol } = this.props;
 
-  const handleAgregarAlCarrito = (producto) => {
-    console.log("Intentando agregar producto", producto);
-    console.log("Estado de login:", logged, "Rol usuario:", rolUsuario);
-    
-    if (!logged) {
-      alert("Debes iniciar sesión para añadir productos al carrito.");
-      return;
+    if (!productos || productos.length === 0) {
+      return (
+        <Container className="mt-5 text-center">
+          <Spinner color="primary" />
+          <p className="mt-3">Cargando productos...</p>
+        </Container>
+      );
     }
-    
-    // Verificar que el producto tenga todos los datos necesarios
-    if (!producto.id_producto) {
-      console.error("Error: El producto no tiene id_producto", producto);
-      alert("Error al agregar el producto al carrito");
-      return;
-    }
-    
-    // En caso de duda, permitir agregar al carrito
-    agregarAlCarrito(producto);
-  };
 
-  return (
-    <div className="container mt-4">
-      <div className="row">
-        {productosFiltrados.map((prod) => (
-          <div key={prod.id_producto} className="col-md-4 mb-4">
-            <Card className="h-100 shadow">
-              <CardImg
-                top
-                src={prod.imagen_url || "https://via.placeholder.com/300x200?text=Sin+imagen"}
-                alt={prod.nombre}
-                style={{ height: "200px", objectFit: "cover" }}
-              />
-              <CardBody>
-                <CardTitle tag="h5">{prod.nombre}</CardTitle>
-                <CardText>{prod.descripcion}</CardText>
-                <CardText className="fw-bold">Precio: {parseFloat(prod.precio).toFixed(2)}€</CardText>
-                <Button 
-                  color="success" 
-                  onClick={() => handleAgregarAlCarrito(prod)}
-                  disabled={!logged}
-                >
-                  Añadir al carrito
-                </Button>
-              </CardBody>
-            </Card>
+    return (
+      <Container className="mt-4 mb-5">
+        <h2 className="mb-4 text-center">Nuestros Productos</h2>
+        <Row>
+          {productos.map((producto) => (
+            <Col key={producto.id_producto} xs="12" sm="6" md="4" lg="3" className="mb-4">
+              <Card className="h-100 shadow-sm">
+                {producto.imagen_url && (
+                  <div 
+                    className="card-img-top" 
+                    style={{
+                      height: "200px",
+                      backgroundImage: `url(${producto.imagen_url})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center"
+                    }}
+                  />
+                )}
+                <CardBody className="d-flex flex-column">
+                  <CardTitle tag="h5">{producto.nombre}</CardTitle>
+                  <CardText className="flex-grow-1">
+                    {producto.descripcion}
+                  </CardText>
+                  <div className="d-flex justify-content-between align-items-center mt-3">
+                    <span className="fw-bold">{parseFloat(producto.precio).toFixed(2)}€</span>
+                    
+                    {/* Botón condicional según rol */}
+                    {logged && rol !== "admin" ? (
+                      <Button 
+                        color="primary" 
+                        size="sm" 
+                        onClick={() => agregarAlCarrito(producto)}
+                      >
+                        Añadir al carrito
+                      </Button>
+                    ) : rol === "admin" ? (
+                      <span className="text-muted fst-italic">
+                        Modo administrador
+                      </span>
+                    ) : (
+                      <Button 
+                        color="secondary" 
+                        size="sm" 
+                        onClick={() => alert("Debes iniciar sesión para comprar")}
+                      >
+                        Iniciar sesión para comprar
+                      </Button>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        
+        {/* Mensaje informativo para administradores */}
+        {rol === "admin" && (
+          <div className="alert alert-info mt-4">
+            <i className="bi bi-info-circle me-2"></i>
+            Estás en modo administrador. En este modo, no puedes realizar compras, pero puedes consultar y gestionar los pedidos desde el botón "Consultar Pedidos" en la cabecera.
           </div>
-        ))}
-      </div>
-    </div>
-  );
+        )}
+      </Container>
+    );
+  }
 }
 
 export default ListaProductos;

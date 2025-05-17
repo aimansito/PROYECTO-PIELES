@@ -14,6 +14,7 @@ import {
   Badge,
 } from "reactstrap";
 import Login from "./Login";
+import HistorialCompras from "./HistorialCompras"; // Importamos el componente de historial
 
 class Cabecera extends Component {
   state = {
@@ -22,6 +23,7 @@ class Cabecera extends Component {
     isDropdownCategoriasOpen: false,
     categorias: [],
     modalLogin: false,
+    modalHistorial: false, // Estado para controlar el modal de historial
   };
 
   componentDidMount() {
@@ -47,6 +49,8 @@ class Cabecera extends Component {
     }));
   toggleModalLogin = () =>
     this.setState((prevState) => ({ modalLogin: !prevState.modalLogin }));
+  toggleModalHistorial = () =>
+    this.setState((prevState) => ({ modalHistorial: !prevState.modalHistorial }));
 
   // Método para manejar login exitoso
   handleLoginSuccess = (isLogged, usuarioData, rol) => {
@@ -68,6 +72,7 @@ class Cabecera extends Component {
       categorias,
       isNavOpen,
       modalLogin,
+      modalHistorial,
       isDropdownOpen,
       isDropdownCategoriasOpen,
     } = this.state;
@@ -75,80 +80,114 @@ class Cabecera extends Component {
       this.props;
 
     return (
-      <Navbar color="dark" dark expand="md" className="px-3">
-        <NavbarBrand href="/">Pieles Store</NavbarBrand>
-        <NavbarToggler onClick={this.toggleNavbar} />
-        <Collapse isOpen={isNavOpen} navbar>
-          <Nav className="ms-auto d-flex align-items-center gap-3">
-            {logged ? (
-              <Dropdown isOpen={isDropdownOpen} toggle={this.toggleDropdown}>
-                <DropdownToggle nav caret className="text-white">
-                  Hola, {usuarioActual?.nombre || "Usuario"} ({rol || "Usuario"})
+      <>
+        <Navbar color="dark" dark expand="md" className="px-3">
+          <NavbarBrand href="/">Pieles Store</NavbarBrand>
+          <NavbarToggler onClick={this.toggleNavbar} />
+          <Collapse isOpen={isNavOpen} navbar>
+            <Nav className="ms-auto d-flex align-items-center gap-3">
+              {logged ? (
+                <>
+                  <Dropdown isOpen={isDropdownOpen} toggle={this.toggleDropdown}>
+                    <DropdownToggle nav caret className="text-white">
+                      Hola, {usuarioActual?.nombre || "Usuario"} ({rol || "Usuario"})
+                    </DropdownToggle>
+                    <DropdownMenu end>
+                      {/* Mostramos la opción de ver historial de pedidos solo si es admin */}
+                      {rol === "admin" && (
+                        <DropdownItem onClick={this.toggleModalHistorial}>
+                          Consultar Pedidos
+                        </DropdownItem>
+                      )}
+                      <DropdownItem onClick={this.handleLogout}>
+                        Cerrar Sesión
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                  
+                  {/* Botón visible para administradores */}
+                  {rol === "admin" && (
+                    <Button 
+                      color="info" 
+                      size="sm" 
+                      onClick={this.toggleModalHistorial}
+                    >
+                      Consultar Pedidos
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <Button
+                  color="link"
+                  className="text-white p-0 d-flex align-items-center"
+                  onClick={this.toggleModalLogin}
+                >
+                  <i className="bi bi-person-circle fs-4"></i>
+                </Button>
+              )}
+
+              <Dropdown
+                isOpen={isDropdownCategoriasOpen}
+                toggle={this.toggleDropdownCategorias}
+              >
+                <DropdownToggle color="link" className="text-white p-0">
+                  Categorías
                 </DropdownToggle>
                 <DropdownMenu end>
-                  <DropdownItem onClick={this.handleLogout}>
-                    Cerrar Sesión
+                  <DropdownItem
+                    key="0"
+                    onClick={() => this.props.setCategoriaSeleccionada("0")}
+                  >
+                    Todas las categorías
                   </DropdownItem>
+                  {categorias.map((cat) => (
+                    <DropdownItem
+                      key={cat.id_categoria}
+                      onClick={() =>
+                        this.props.setCategoriaSeleccionada(cat.id_categoria)
+                      }
+                    >
+                      {cat.nomCategoria}
+                    </DropdownItem>
+                  ))}
                 </DropdownMenu>
               </Dropdown>
-            ) : (
-              <Button
-                color="link"
-                className="text-white p-0 d-flex align-items-center"
-                onClick={this.toggleModalLogin}
-              >
-                <i className="bi bi-person-circle fs-4"></i>
-              </Button>
-            )}
 
-            <Dropdown
-              isOpen={isDropdownCategoriasOpen}
-              toggle={this.toggleDropdownCategorias}
-            >
-              <DropdownToggle color="link" className="text-white p-0">
-                Categorías
-              </DropdownToggle>
-              <DropdownMenu end>
-                <DropdownItem
-                  key="0"
-                  onClick={() => this.props.setCategoriaSeleccionada("0")}
+              {/* Botón del carrito, solo visible para usuarios no admin */}
+              {rol !== "admin" && (
+                <Button
+                  color="link"
+                  className="text-white position-relative"
+                  onClick={toggleCarrito}
                 >
-                  Todas las categorías
-                </DropdownItem>
-                {categorias.map((cat) => (
-                  <DropdownItem
-                    key={cat.id_categoria}
-                    onClick={() =>
-                      this.props.setCategoriaSeleccionada(cat.id_categoria)
-                    }
-                  >
-                    {cat.nomCategoria}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-
-            <Button
-              color="link"
-              className="text-white position-relative"
-              onClick={toggleCarrito}
-            >
-              <i className="bi bi-cart3 fs-4"></i>
-              {numProductosCarrito > 0 && (
-                <Badge color="danger" pill>
-                  {numProductosCarrito}
-                </Badge>
+                  <i className="bi bi-cart3 fs-4"></i>
+                  {numProductosCarrito > 0 && (
+                    <Badge color="danger" pill>
+                      {numProductosCarrito}
+                    </Badge>
+                  )}
+                </Button>
               )}
-            </Button>
-          </Nav>
-        </Collapse>
+            </Nav>
+          </Collapse>
 
-        <Login
-          isOpen={modalLogin}
-          toggle={this.toggleModalLogin}
-          onLoginSuccess={this.handleLoginSuccess}
-        />
-      </Navbar>
+          <Login
+            isOpen={modalLogin}
+            toggle={this.toggleModalLogin}
+            onLoginSuccess={this.handleLoginSuccess}
+          />
+        </Navbar>
+
+        {/* Componente de historial de compras */}
+        {logged && (
+          <HistorialCompras
+            mostrar={modalHistorial}
+            toggle={this.toggleModalHistorial}
+            usuario={usuarioActual?.nombre}
+            rol={rol}
+          />
+        )}
+      </>
     );
   }
 }

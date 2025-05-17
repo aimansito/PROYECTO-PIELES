@@ -1,59 +1,98 @@
 import React, { useState } from "react";
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Table, Alert } from "reactstrap";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Table,
+  Alert,
+} from "reactstrap";
 import axios from "axios";
 import Login from "./Login";
 
-const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarrito, cambiarCantidad, limpiarCarrito }) => {
+const CarritoModal = ({
+  carrito,
+  mostrar,
+  toggle,
+  usuarioActual,
+  eliminarDelCarrito,
+  cambiarCantidad,
+  limpiarCarrito,
+}) => {
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const total = carrito.reduce((suma, producto) => suma + producto.precio * producto.cantidad, 0);
+  const total = carrito.reduce(
+    (suma, producto) => suma + producto.precio * producto.cantidad,
+    0
+  );
 
   const toggleLoginModal = () => setShowLoginModal(!showLoginModal);
 
+  // ✅ Guardar Pedido en BD (solo pedidos)
   const guardarPedidoEnBD = async () => {
-  try {
-    if (!usuarioActual || !usuarioActual.id) {
+    try {
+      if (!usuarioActual || !usuarioActual.id) {
+        setMensaje({
+          texto:
+            "No se pudo identificar tu cuenta. Por favor, inicia sesión nuevamente.",
+          tipo: "danger",
+        });
+        return false;
+      }
+
+      const API_URL = "http://localhost/server/crear_pedido.php";
+      const dataPedido = {
+        id_cliente: usuarioActual.id,
+        importe: total,
+      };
+
+      const response = await axios.post(API_URL, dataPedido);
+
+      if (response.data?.success) {
+        return response.data.id_pedido;
+      } else {
+        setMensaje({
+          texto: response.data?.mensaje || "Error al procesar el pedido",
+          tipo: "danger",
+        });
+        return null;
+      }
+    } catch (error) {
       setMensaje({
-        texto: "No se pudo identificar tu cuenta. Por favor, inicia sesión nuevamente.",
+        texto: "Error de conexión con el servidor",
+        tipo: "danger",
+      });
+      return null;
+    }
+  };
+
+  // ✅ Guardar Detalles del Pedido en BD (pedidos_productos)
+  const guardarDetallesPedidoEnBD = async (idPedido) => {
+    try {
+      const API_URL = "http://localhost/server/crear_detalles_pedido.php";
+      const productos = carrito.map((producto) => ({
+        id_pedido: idPedido,
+        id_producto: producto.id,
+        cantidad: producto.cantidad,
+        importeProducto: producto.precio * producto.cantidad,
+      }));
+
+      const response = await axios.post(API_URL, { productos });
+
+      return response.data?.success;
+    } catch (error) {
+      setMensaje({
+        texto: "Error al guardar los productos del pedido",
         tipo: "danger",
       });
       return false;
     }
+  };
 
-    const API_URL = "http://localhost/server/crear_pedido.php";
-
-    const dataPedido = {
-      id_cliente: usuarioActual.id,
-      importe: total,
-    };
-
-    const response = await axios.post(API_URL, dataPedido);
-
-    if (response.data?.success) {
-      setMensaje({
-        texto: "¡Compra realizada con éxito!",
-        tipo: "success",
-      });
-      return true;
-    } else {
-      setMensaje({
-        texto: response.data?.mensaje || "Error al procesar la compra",
-        tipo: "danger",
-      });
-      return false;
-    }
-  } catch (error) {
-    setMensaje({
-      texto: "Error de conexión con el servidor",
-      tipo: "danger",
-    });
-    return false;
-  }
-};
-
-
+  // ✅ Confirmar Compra
   const confirmarCompra = async () => {
     if (carrito.length === 0) {
       setMensaje({
@@ -75,16 +114,27 @@ const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarr
     setProcesando(true);
     setMensaje({ texto: "", tipo: "" });
 
-    const exito = await guardarPedidoEnBD();
+    const idPedido = await guardarPedidoEnBD();
+    
+    if (idPedido) {
+      const exito = await guardarDetallesPedidoEnBD(idPedido);
+
+      if (exito) {
+        setMensaje({
+          texto: "¡Compra realizada con éxito!",
+          tipo: "success",
+        });
+        if (limpiarCarrito) limpiarCarrito();
+        setTimeout(() => toggle(), 2000);
+      } else {
+        setMensaje({
+          texto: "Error al guardar los productos del pedido",
+          tipo: "danger",
+        });
+      }
+    }
 
     setProcesando(false);
-
-    if (exito) {
-      if (limpiarCarrito) {
-        limpiarCarrito(); // Limpiar carrito desde el padre
-      }
-      setTimeout(() => toggle(), 2000);
-    }
   };
 
   return (
@@ -96,8 +146,12 @@ const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarr
 
           {usuarioActual ? (
             <Alert color="info" className="mb-3">
-              <p className="mb-0"><strong>Cliente:</strong> {usuarioActual.nombre}</p>
-              <p className="mb-0"><strong>ID Usuario:</strong> {usuarioActual.id}</p>
+              <p className="mb-0">
+                <strong>Cliente:</strong> {usuarioActual.nombre}
+              </p>
+              <p className="mb-0">
+                <strong>ID Usuario:</strong> {usuarioActual.id}
+              </p>
             </Alert>
           ) : (
             <Alert color="warning" className="mb-3">
@@ -105,7 +159,6 @@ const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarr
               <Button color="link" className="p-0 ms-2" onClick={toggleLoginModal}>
                 Inicia sesión aquí
               </Button>
-              para completar tu compra.
             </Alert>
           )}
 
@@ -125,29 +178,14 @@ const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarr
                   <tr key={producto.id}>
                     <td>{producto.nombre}</td>
                     <td>{producto.precio.toFixed(2)}€</td>
-                    <td>
-                      <div className="d-flex align-items-center">
-                        <Button
-                          size="sm"
-                          color="secondary"
-                          onClick={() => cambiarCantidad(producto.id, producto.cantidad - 1)}
-                          disabled={producto.cantidad <= 1}
-                        >
-                          -
-                        </Button>
-                        <span className="mx-2">{producto.cantidad}</span>
-                        <Button
-                          size="sm"
-                          color="secondary"
-                          onClick={() => cambiarCantidad(producto.id, producto.cantidad + 1)}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </td>
+                    <td>{producto.cantidad}</td>
                     <td>{(producto.precio * producto.cantidad).toFixed(2)}€</td>
                     <td>
-                      <Button color="danger" size="sm" onClick={() => eliminarDelCarrito(producto.id)}>
+                      <Button
+                        color="danger"
+                        size="sm"
+                        onClick={() => eliminarDelCarrito(producto.id)}
+                      >
                         <i className="bi bi-trash"></i>
                       </Button>
                     </td>
@@ -181,4 +219,3 @@ const CarritoModal = ({ carrito, mostrar, toggle, usuarioActual, eliminarDelCarr
 };
 
 export default CarritoModal;
-
