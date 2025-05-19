@@ -14,7 +14,7 @@
     Badge,
   } from "reactstrap";
   import Login from "./Login";
-  import HistorialCompras from "./HistorialCompras"; // Importamos el componente de historial
+  import HistorialCompras from "./HistorialCompras"; 
 
   class Cabecera extends Component {
     state = {

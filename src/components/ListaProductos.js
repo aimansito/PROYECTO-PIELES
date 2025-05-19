@@ -4,7 +4,7 @@ import { Container, Row, Col, Card, CardBody, CardTitle, CardText, Button, Spinn
 class ListaProductos extends Component {
   render() {
     const { productos, agregarAlCarrito, logged, rol } = this.props;
-
+    
     if (!productos || productos.length === 0) {
       return (
         <Container className="mt-5 text-center">
@@ -13,7 +13,7 @@ class ListaProductos extends Component {
         </Container>
       );
     }
-
+    
     return (
       <Container className="mt-4 mb-5">
         <h2 className="mb-4 text-center">Nuestros Productos</h2>
@@ -22,8 +22,8 @@ class ListaProductos extends Component {
             <Col key={producto.id_producto} xs="12" sm="6" md="4" lg="3" className="mb-4">
               <Card className="h-100 shadow-sm">
                 {producto.imagen_url && (
-                  <div 
-                    className="card-img-top" 
+                  <div
+                    className="card-img-top"
                     style={{
                       height: "200px",
                       backgroundImage: `url(${producto.imagen_url})`,
@@ -39,12 +39,11 @@ class ListaProductos extends Component {
                   </CardText>
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <span className="fw-bold">{parseFloat(producto.precio).toFixed(2)}€</span>
-                    
                     {/* Botón condicional según rol */}
                     {logged && rol !== "admin" ? (
-                      <Button 
-                        color="primary" 
-                        size="sm" 
+                      <Button
+                        color="primary"
+                        size="sm"
                         onClick={() => agregarAlCarrito(producto)}
                       >
                         Añadir al carrito
@@ -54,12 +53,12 @@ class ListaProductos extends Component {
                         Modo administrador
                       </span>
                     ) : (
-                      <Button 
-                        color="secondary" 
-                        size="sm" 
-                        onClick={() => alert("Debes iniciar sesión para comprar")}
+                      <Button
+                        color="secondary"
+                        size="sm"
+                        onClick={() => agregarAlCarrito(producto)}
                       >
-                        Iniciar sesión para comprar
+                        Añadir al carrito
                       </Button>
                     )}
                   </div>
@@ -68,7 +67,6 @@ class ListaProductos extends Component {
             </Col>
           ))}
         </Row>
-        
         {/* Mensaje informativo para administradores */}
         {rol === "admin" && (
           <div className="alert alert-info mt-4">

@@ -31,7 +31,6 @@ const CarritoModal = ({
 
   const toggleLoginModal = () => setShowLoginModal(!showLoginModal);
 
-  // ✅ Guardar Pedido en BD (solo pedidos)
   const guardarPedidoEnBD = async () => {
     try {
       if (!usuarioActual || !usuarioActual.id) {
@@ -69,7 +68,6 @@ const CarritoModal = ({
     }
   };
 
-  // ✅ Guardar Detalles del Pedido en BD (pedidos_productos)
   const guardarDetallesPedidoEnBD = async (idPedido) => {
     try {
       const API_URL = "http://localhost/server/crear_detalles_pedido.php";
@@ -92,7 +90,7 @@ const CarritoModal = ({
     }
   };
 
-  // ✅ Confirmar Compra
+  // Confirmar Compra
   const confirmarCompra = async () => {
     if (carrito.length === 0) {
       setMensaje({

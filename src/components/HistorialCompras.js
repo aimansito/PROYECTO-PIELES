@@ -20,9 +20,7 @@
             this.cargarPedidos();
         }
 
-        // Se ejecuta cuando el componente recibe nuevas props
         componentDidUpdate(prevProps) {
-            // Si el modal estaba cerrado y ahora se abre, recargamos los pedidos
             if (!prevProps.mostrar && this.props.mostrar) {
                 this.cargarPedidos();
             }
@@ -63,7 +61,6 @@
                 // Guardamos los datos originales
                 this.setState({ pedidos: respuesta.data });
                 
-                // Agrupamos los pedidos por id_pedido para mostrarlos organizados
                 const pedidosAgrupados = this.agruparPedidos(respuesta.data);
                 
                 this.setState({ 
@@ -121,7 +118,7 @@
                     minute: '2-digit'
                 });
             } catch (e) {
-                return fechaStr; // Si hay error, devolvemos la fecha original
+                return fechaStr; 
             }
         };
         

@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Cabecera from "./components/Cabecera";
 import ListaProductos from "./components/ListaProductos";
 import Carrito from "./components/CarritoModal";
+import MensajeModal from "./components/MensajeModal"; // Importamos el componente MensajeModal
 import axios from "axios";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import "./App.css";
@@ -10,15 +11,39 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 class App extends Component {
   state = {
-    productosCompletos: [], // Almacena TODOS los productos sin filtrar ni limitar
-    productos: [], // Muestra aleatoria inicial (15 productos)
-    productosFiltrados: [], // Los productos que se muestran actualmente
+    productosCompletos: [],
+    productos: [],
+    productosFiltrados: [],
     categoriaSeleccionada: null,
     carrito: [],
     modalCarrito: false,
     logged: false,
     usuarioActual: null,
     rol: null,
+    // Estado para el mensaje modal
+    mensajeModal: { texto: "", tipo: "", mostrar: false }
+  };
+
+  // Función para mostrar un mensaje modal
+  mostrarMensaje = (texto, tipo) => {
+    this.setState({
+      mensajeModal: {
+        texto,
+        tipo,
+        mostrar: true
+      }
+    });
+  };
+
+  // Función para cerrar el mensaje modal
+  cerrarMensaje = () => {
+    this.setState({
+      mensajeModal: {
+        texto: "",
+        tipo: "",
+        mostrar: false
+      }
+    });
   };
 
   componentDidMount() {
@@ -58,9 +83,9 @@ class App extends Component {
           .slice(0, 15);
 
         this.setState({
-          productosCompletos: todosLosProductos, // Guardar todos los productos
-          productos: productosAleatorios, // Vista inicial aleatoria
-          productosFiltrados: productosAleatorios, // Lo que se muestra
+          productosCompletos: todosLosProductos,
+          productos: productosAleatorios,
+          productosFiltrados: productosAleatorios,
         });
 
         console.log(
@@ -68,7 +93,8 @@ class App extends Component {
         );
       }
     } catch (error) {
-      console.error("Error al cargar productos:", error);
+      // Mostrar mensaje de error
+      this.mostrarMensaje("Error al cargar productos.", "error");
     }
   };
 
@@ -79,7 +105,7 @@ class App extends Component {
     // Si es categoría "0" o nula, mostrar productos aleatorios iniciales
     if (!idCategoria || idCategoria === "0") {
       this.setState({
-        productosFiltrados: this.state.productos, // Volver a los 15 aleatorios
+        productosFiltrados: this.state.productos,
         categoriaSeleccionada: null,
       });
       console.log("Mostrando selección aleatoria inicial");
@@ -95,7 +121,7 @@ class App extends Component {
       );
 
       this.setState({
-        productosFiltrados, // Actualizar los productos mostrados
+        productosFiltrados,
         categoriaSeleccionada: idCategoria,
       });
 
@@ -104,10 +130,11 @@ class App extends Component {
       );
     }
   };
+
   toggleCarrito = () => {
     // Solo permitir abrir el carrito si el usuario no es administrador
     if (this.state.rol === "admin") {
-      alert("Como administrador, no puedes realizar compras.");
+      this.mostrarMensaje("Como administrador, no puedes realizar compras.", "error");
       return;
     }
     this.setState((prevState) => ({ modalCarrito: !prevState.modalCarrito }));
@@ -116,13 +143,19 @@ class App extends Component {
   agregarAlCarrito = (producto) => {
     // Verificar primero si está logueado
     if (!this.state.logged) {
-      alert("Debes iniciar sesión para añadir productos.");
+      this.setState({
+        mensajeModal: {
+          texto: "Debes iniciar sesión para añadir productos.",
+          tipo: "primary",
+          mostrar: true
+        }
+      });
       return;
     }
 
     // Verificar el rol - solo usuarios no administradores pueden comprar
     if (this.state.rol === "admin") {
-      alert("Como administrador, no puedes realizar compras.");
+      this.mostrarMensaje("Como administrador, no puedes realizar compras.", "error");
       return;
     }
 
@@ -136,6 +169,7 @@ class App extends Component {
 
     if (index !== -1) {
       carritoActualizado[index].cantidad += 1;
+      this.mostrarMensaje("Se actualizó la cantidad del producto en el carrito.", "success");
     } else {
       // Añadir nuevo producto con cantidad 1
       carritoActualizado.push({
@@ -147,13 +181,12 @@ class App extends Component {
         id_categoria: producto.id_categoria,
         cantidad: 1,
       });
+      this.mostrarMensaje("Producto añadido al carrito con éxito.", "success");
     }
 
     this.setState({ carrito: carritoActualizado }, () => {
       localStorage.setItem("carrito", JSON.stringify(carritoActualizado));
     });
-
-    alert(`Añadido al carrito: ${producto.nombre}`);
   };
 
   eliminarDelCarrito = (productoId) => {
@@ -162,6 +195,7 @@ class App extends Component {
     );
     this.setState({ carrito: carritoActualizado }, () => {
       localStorage.setItem("carrito", JSON.stringify(carritoActualizado));
+      this.mostrarMensaje("Producto eliminado del carrito.", "info");
     });
   };
 
@@ -177,6 +211,7 @@ class App extends Component {
       carritoActualizado[index].cantidad = nuevaCantidad;
       this.setState({ carrito: carritoActualizado }, () => {
         localStorage.setItem("carrito", JSON.stringify(carritoActualizado));
+        this.mostrarMensaje("Cantidad actualizada.", "info");
       });
     }
   };
@@ -187,7 +222,8 @@ class App extends Component {
       if (logged && usuarioActual) {
         // Guardar todos los datos de usuario en localStorage
         localStorage.setItem("usuario", JSON.stringify(usuarioActual));
-
+        this.mostrarMensaje(`¡Bienvenido, ${usuarioActual.nombre || 'Usuario'}!`, "success");
+        
         // Si es administrador, vaciar el carrito
         if (rol === "admin") {
           this.setState({ carrito: [] }, () => {
@@ -198,6 +234,7 @@ class App extends Component {
         localStorage.removeItem("usuario");
         this.setState({ carrito: [] }, () => {
           localStorage.removeItem("carrito");
+          this.mostrarMensaje("Has cerrado sesión correctamente.", "info");
         });
       }
     });
@@ -211,6 +248,7 @@ class App extends Component {
       rol,
       modalCarrito,
       carrito,
+      mensajeModal
     } = this.state;
 
     return (
@@ -227,6 +265,15 @@ class App extends Component {
           )}
           setCategoriaSeleccionada={this.setCategoriaSeleccionada}
         />
+        
+        {/* Componente de mensaje modal */}
+        <MensajeModal
+          mostrar={mensajeModal.mostrar}
+          tipo={mensajeModal.tipo}
+          texto={mensajeModal.texto}
+          cerrarMensaje={this.cerrarMensaje}
+        />
+        
         <Routes>
           <Route
             path="/"
@@ -235,7 +282,7 @@ class App extends Component {
                 productos={productosFiltrados}
                 agregarAlCarrito={this.agregarAlCarrito}
                 logged={logged}
-                rol={rol} // Pasar el rol para controlar botones de compra
+                rol={rol}
               />
             }
           />

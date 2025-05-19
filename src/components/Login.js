@@ -29,7 +29,6 @@ class Login extends Component {
 
       const data = response.data;
       
-      // Depuración de la respuesta completa
       console.log("Respuesta completa del servidor:", response);
       
       if (data.success) {
